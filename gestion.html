@@ -1,4 +1,3 @@
-<!-- gestion.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,19 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestionar Dispositivos</title>
     <link rel="stylesheet" href="styles.css">
+    <script defer src="gestion.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>Gestionar Dispositivos</h1>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Estado</th>
-                <th>Etiquetas</th>
-                <th>Acciones</th>
-            </tr>
-            <!-- Aquí se llenará con datos dinámicamente -->
+        <table id="device-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th>Etiquetas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Datos dinámicos -->
+            </tbody>
         </table>
     </div>
 </body>
