@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Dispositivo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Registrar Dispositivo</h1>
+        <form id="device-form">
+            <label>ID Único:</label><input type="text" id="deviceId" required>
+            <label>Nombre:</label><input type="text" id="name" required>
+            <label>Dirección IP:</label><input type="text" id="ipAddress" required>
+            <label>Latitud:</label><input type="text" id="latitude" required>
+            <label>Longitud:</label><input type="text" id="longitude" required>
+            <button type="submit">Registrar</button>
+        </form>
+        <p id="response"></p>
+    </div>
+
+    <script>
+        document.getElementById('device-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evita recargar la página
+
+            const deviceData = {
+                deviceId: document.getElementById('deviceId').value,
+                name: document.getElementById('name').value,
+                ipAddress: document.getElementById('ipAddress').value,
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value
+            };
+
+            const response = await fetch('/register-device', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(deviceData)
+            });
+
+            const result = await response.text();
+            document.getElementById('response').innerText = result;
+        });
+    </script>
+</body>
+</html>

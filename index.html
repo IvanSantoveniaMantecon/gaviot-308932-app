@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Dispositivos IoT</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Menú</h2>
+        <ul>
+            <li><a href="#" onclick="showSection('gestion')">Gestión</a></li>
+            <li><a href="#">Envío y Recepción</a></li>
+            <li><a href="#">Actualización</a></li>
+            <li><a href="#">Recepción</a></li>
+            <li><a href="#">Panel de Administración</a></li>
+        </ul>
+    </div>
+    <div class="content" id="main-content">
+        <div id="gestion" class="hidden">
+            <a href="registro.html" class="button">Registrar Dispositivo</a>
+            <a href="gestion.html" class="button">Gestionar Dispositivos</a>
+            <a href="consulta.html" class="button">Consultar Información</a>
+        </div>
+    </div>
+    <script>
+        function showSection(sectionId) {
+            document.getElementById('main-content').innerHTML = document.getElementById(sectionId).innerHTML;
+        }
+    </script>
+</body>
+</html>
