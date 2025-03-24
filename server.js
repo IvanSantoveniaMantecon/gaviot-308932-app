@@ -61,23 +61,22 @@ app.get('/devices', (req, res) => {
 });
 
 // 📌 Obtener un solo dispositivo
-app.get('/devices/:id', (req, res) => {
-    const deviceId = req.params.id;
+app.get("/device/:deviceId", (req, res) => {
+    const { deviceId } = req.params;
 
-    registry.get(deviceId, (err, deviceInfo) => {
+    registry.getTwin(deviceId, (err, twin) => {
         if (err) {
-            console.error(`Error obteniendo dispositivo: ${err.message}`);
-            return res.status(404).send("Dispositivo no encontrado.");
+            console.error(`Error consultando el dispositivo: ${err.message}`);
+            return res.status(500).json({ error: "No se pudo obtener la información del dispositivo." });
         }
 
-        const device = {
-            deviceId: deviceInfo.deviceId,
-            name: deviceInfo.deviceId, // No hay campo "name", usamos el ID
-            status: deviceInfo.connectionState || "Desconocido",
-            tags: deviceInfo.tags || ""
-        };
-
-        res.json(device);
+        res.json({
+            deviceId: twin.deviceId,
+            status: twin.connectionState || "Desconocido",
+            properties: twin.properties || {},
+            configurations: twin.configurations || {},
+            tags: twin.tags || {}
+        });
     });
 });
 
