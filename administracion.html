@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración IoT</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .charts-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        canvas {
+            width: 400px !important;
+            height: 300px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Menú</h2>
+        <ul>
+            <li><a href="#telemetry">Telemetría</a></li>
+            <li><a href="#alerts">Alertas</a></li>
+            <li><a href="#charts">Gráficos</a></li>
+        </ul>
+    </div>
+    
+    <div class="content">
+        <header>
+            <h1>Panel de Administración - IoT</h1>
+        </header>
+        
+        <main>
+            <section id="telemetry">
+                <h2>Datos de Telemetría</h2>
+                <div id="devices-telemetry"></div>
+            </section>
+            
+            <section id="alerts">
+                <h2>Alertas</h2>
+                <div id="alerts-container"></div>
+            </section>
+            
+            <section id="charts">
+                <h2>Gráficos de Telemetría</h2>
+                <h3>Temperatura</h3>
+                <div class="charts-container">
+                    <canvas id="temperatureChart1"></canvas>
+                    <canvas id="temperatureChart2"></canvas>
+                    <canvas id="temperatureChart3"></canvas>
+                </div>
+
+                <h3>Humedad</h3>
+                <div class="charts-container">
+                    <canvas id="humidityChart1"></canvas>
+                    <canvas id="humidityChart2"></canvas>
+                    <canvas id="humidityChart3"></canvas>
+                </div>
+
+                <h3>Precipitación</h3>
+                <div class="charts-container">
+                    <canvas id="precipitationChart1"></canvas>
+                    <canvas id="precipitationChart2"></canvas>
+                    <canvas id="precipitationChart3"></canvas>
+                </div>
+
+                <h3>Velocidad del Viento</h3>
+                <div class="charts-container">
+                    <canvas id="windSpeedChart1"></canvas>
+                    <canvas id="windSpeedChart2"></canvas>
+                    <canvas id="windSpeedChart3"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        const telemetryData = {
+            device1: [],
+            device2: [],
+            device3: []
+        };
+        
+        const alertThresholds = {
+            temperature: 30,
+            humidity: 80,
+            precipitation: 10,
+            windSpeed: 20
+        };
+        
+        function updateTelemetry(deviceId, newData) {
+            const dataList = telemetryData[deviceId];
+            if (dataList.length >= 3) {
+                dataList.shift();
+            }
+            dataList.push(newData);
+            renderTelemetryTables();
+            checkAlerts(deviceId, newData);
+            updateCharts();
+        }
+        
+        function calculateAverage(dataList) {
+            const avg = {
+                temperature: 0,
+                humidity: 0,
+                precipitation: 0,
+                windSpeed: 0
+            };
+            dataList.forEach(d => {
+                avg.temperature += parseFloat(d.temperature);
+                avg.humidity += parseFloat(d.humidity);
+                avg.precipitation += parseFloat(d.precipitation);
+                avg.windSpeed += parseFloat(d.windSpeed);
+            });
+            Object.keys(avg).forEach(k => avg[k] = (avg[k] / dataList.length).toFixed(2));
+            return avg;
+        }
+        
+        function renderTelemetryTables() {
+            const container = document.getElementById("devices-telemetry");
+            container.innerHTML = "";
+            
+            Object.entries(telemetryData).forEach(([deviceId, dataList]) => {
+                const avg = calculateAverage(dataList);
+                let tableHTML = `
+                    <h3>${deviceId}</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Temperatura (°C)</th>
+                                <th>Humedad (%)</th>
+                                <th>Precipitación (mm)</th>
+                                <th>Velocidad del Viento (km/h)</th>
+                                <th>Media</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                dataList.forEach(d => {
+                    tableHTML += `
+                        <tr>
+                            <td>${d.temperature}</td>
+                            <td>${d.humidity}</td>
+                            <td>${d.precipitation}</td>
+                            <td>${d.windSpeed}</td>
+                            <td>-</td>
+                        </tr>`;
+                });
+                tableHTML += `
+                    <tr>
+                        <td>${avg.temperature}</td>
+                        <td>${avg.humidity}</td>
+                        <td>${avg.precipitation}</td>
+                        <td>${avg.windSpeed}</td>
+                        <td><strong>Media</strong></td>
+                    </tr>
+                    </tbody>
+                    </table>`;
+                container.innerHTML += tableHTML;
+            });
+        }
+        
+        function checkAlerts(deviceId, data) {
+            const alertsContainer = document.getElementById("alerts-container");
+            Object.entries(alertThresholds).forEach(([key, threshold]) => {
+                if (parseFloat(data[key]) > threshold) {
+                    const alertMessage = `Alerta: ${deviceId} - ${key} sobrepasó el umbral (${data[key]} > ${threshold})`;
+                    const alertDiv = document.createElement("div");
+                    alertDiv.className = "alert";
+                    alertDiv.textContent = alertMessage;
+                    alertsContainer.appendChild(alertDiv);
+                    setTimeout(() => alertDiv.remove(), 5000);
+                }
+            });
+        }
+
+        // Crear los gráficos de los tres dispositivos para cada dato
+        const charts = {
+            temperature: [
+                new Chart(document.getElementById('temperatureChart1'), { type: 'line', data: { labels: [], datasets: [{ label: 'Temperatura - Dispositivo 1', data: [], borderColor: 'red', fill: false }] } }),
+                new Chart(document.getElementById('temperatureChart2'), { type: 'line', data: { labels: [], datasets: [{ label: 'Temperatura - Dispositivo 2', data: [], borderColor: 'red', fill: false }] } }),
+                new Chart(document.getElementById('temperatureChart3'), { type: 'line', data: { labels: [], datasets: [{ label: 'Temperatura - Dispositivo 3', data: [], borderColor: 'red', fill: false }] } })
+            ],
+            humidity: [
+                new Chart(document.getElementById('humidityChart1'), { type: 'line', data: { labels: [], datasets: [{ label: 'Humedad - Dispositivo 1', data: [], borderColor: 'blue', fill: false }] } }),
+                new Chart(document.getElementById('humidityChart2'), { type: 'line', data: { labels: [], datasets: [{ label: 'Humedad - Dispositivo 2', data: [], borderColor: 'blue', fill: false }] } }),
+                new Chart(document.getElementById('humidityChart3'), { type: 'line', data: { labels: [], datasets: [{ label: 'Humedad - Dispositivo 3', data: [], borderColor: 'blue', fill: false }] } })
+            ],
+            precipitation: [
+                new Chart(document.getElementById('precipitationChart1'), { type: 'line', data: { labels: [], datasets: [{ label: 'Precipitación - Dispositivo 1', data: [], borderColor: 'green', fill: false }] } }),
+                new Chart(document.getElementById('precipitationChart2'), { type: 'line', data: { labels: [], datasets: [{ label: 'Precipitación - Dispositivo 2', data: [], borderColor: 'green', fill: false }] } }),
+                new Chart(document.getElementById('precipitationChart3'), { type: 'line', data: { labels: [], datasets: [{ label: 'Precipitación - Dispositivo 3', data: [], borderColor: 'green', fill: false }] } })
+            ],
+            windSpeed: [
+                new Chart(document.getElementById('windSpeedChart1'), { type: 'line', data: { labels: [], datasets: [{ label: 'Viento - Dispositivo 1', data: [], borderColor: 'orange', fill: false }] } }),
+                new Chart(document.getElementById('windSpeedChart2'), { type: 'line', data: { labels: [], datasets: [{ label: 'Viento - Dispositivo 2', data: [], borderColor: 'orange', fill: false }] } }),
+                new Chart(document.getElementById('windSpeedChart3'), { type: 'line', data: { labels: [], datasets: [{ label: 'Viento - Dispositivo 3', data: [], borderColor: 'orange', fill: false }] } })
+            ]
+        };
+
+        function updateCharts() {
+            Object.keys(charts).forEach(metric => {
+                charts[metric].forEach(chart => {
+                    chart.data.labels.push(new Date().toLocaleTimeString());
+                    if (chart.data.labels.length > 10) chart.data.labels.shift();
+                    chart.data.datasets[0].data.push(Math.random() * 50);
+                    if (chart.data.datasets[0].data.length > 10) chart.data.datasets[0].data.shift();
+                    chart.update();
+                });
+            });
+        }
+
+        setInterval(() => {
+            const newTelemetry = {
+                temperature: (20 + Math.random() * 10).toFixed(2),
+                humidity: (40 + Math.random() * 20).toFixed(2),
+                precipitation: (Math.random() * 5).toFixed(2),
+                windSpeed: (5 + Math.random() * 10).toFixed(2)
+            };
+            updateTelemetry("device1", newTelemetry);
+            updateTelemetry("device2", newTelemetry);
+            updateTelemetry("device3", newTelemetry);
+        }, 5000);
+    </script>
+</body>
+</html>
