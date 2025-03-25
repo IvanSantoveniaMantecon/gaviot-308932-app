@@ -91,6 +91,43 @@ app.get("/device/:deviceId", (req, res) => {
     });
 });
 
+// 📌 Modificar las propiedades deseadas del gemelo digital
+app.put('/device/:deviceId/properties', (req, res) => {
+    const { deviceId } = req.params;
+    const { frequency } = req.body;  // Recibimos la nueva frecuencia
+
+    if (!frequency || isNaN(frequency) || frequency <= 0) {
+        return res.status(400).json({ error: 'Se debe proporcionar una frecuencia válida en milisegundos.' });
+    }
+
+    registry.getTwin(deviceId, (err, twin) => {
+        if (err) {
+            console.error("Error obteniendo el gemelo digital:", err.message);
+            return res.status(500).json({ error: "No se pudo obtener la información del gemelo digital." });
+        }
+
+        const twinPatch = {
+            properties: {
+                desired: {
+                    frequency: frequency // Establecemos la nueva frecuencia
+                }
+            }
+        };
+
+        // Actualizamos el gemelo digital con la nueva propiedad deseada
+        twin.update(twinPatch, (err) => {
+            if (err) {
+                console.error("Error actualizando el gemelo digital:", err.message);
+                return res.status(500).json({ error: "No se pudo actualizar la propiedad deseada." });
+            }
+
+            res.json({
+                message: `Frecuencia actualizada a ${frequency}ms para el dispositivo ${deviceId}.`
+            });
+        });
+    });
+});
+
 // 📌 Editar un dispositivo en Azure IoT Hub
 app.put('/devices/:id', (req, res) => {
     const deviceId = req.params.id;
@@ -227,7 +264,6 @@ app.post('/send-command/:deviceId', (req, res) => {
 
     res.status(400).json({ error: `Comando "${command}" no reconocido.` });
 });
-
 
 // 🚀 Iniciar servidor
 app.listen(PORT, () => {
