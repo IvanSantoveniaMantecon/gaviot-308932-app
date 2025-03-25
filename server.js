@@ -68,62 +68,16 @@ app.get("/device/:deviceId", (req, res) => {
 
     registry.getTwin(deviceId, (err, twin) => {
         if (err) {
-            console.error("Error consultando el dispositivo:", err.message);
-            return res.status(500).json({ error: "No se pudo obtener la información del dispositivo o gemelo digital." });
+            console.error(`Error consultando el dispositivo: ${err.message}`);
+            return res.status(500).json({ error: "No se pudo obtener la información del dispositivo." });
         }
 
-        // Revisamos si las propiedades deseadas o reportadas existen
-        const desiredProperties = twin.properties.desired || {};
-        const reportedProperties = twin.properties.reported || {};
-
-        // Devolvemos la información del gemelo digital
         res.json({
             deviceId: twin.deviceId,
             status: twin.connectionState || "Desconocido",
-            desiredProperties: desiredProperties,
-            reportedProperties: reportedProperties,
-            capabilities: twin.capabilities || {},
-            modelId: twin.modelId || "N/A",
-            tags: twin.tags || {},
-            version: twin.version,
-            lastActivityTime: twin.lastActivityTime,
-        });
-    });
-});
-
-// 📌 Modificar las propiedades deseadas del gemelo digital
-app.put('/device/:deviceId/properties', (req, res) => {
-    const { deviceId } = req.params;
-    const { frequency } = req.body;  // Recibimos la nueva frecuencia
-
-    if (!frequency || isNaN(frequency) || frequency <= 0) {
-        return res.status(400).json({ error: 'Se debe proporcionar una frecuencia válida en milisegundos.' });
-    }
-
-    registry.getTwin(deviceId, (err, twin) => {
-        if (err) {
-            console.error("Error obteniendo el gemelo digital:", err.message);
-            return res.status(500).json({ error: "No se pudo obtener la información del gemelo digital." });
-        }
-
-        const twinPatch = {
-            properties: {
-                desired: {
-                    frequency: frequency // Establecemos la nueva frecuencia
-                }
-            }
-        };
-
-        // Actualizamos el gemelo digital con la nueva propiedad deseada
-        twin.update(twinPatch, (err) => {
-            if (err) {
-                console.error("Error actualizando el gemelo digital:", err.message);
-                return res.status(500).json({ error: "No se pudo actualizar la propiedad deseada." });
-            }
-
-            res.json({
-                message: `Frecuencia actualizada a ${frequency}ms para el dispositivo ${deviceId}.`
-            });
+            properties: twin.properties || {},
+            configurations: twin.configurations || {},
+            tags: twin.tags || {}
         });
     });
 });
@@ -253,7 +207,6 @@ app.post('/send-command/:deviceId', (req, res) => {
             return res.status(400).json({ error: 'Se debe proporcionar un valor válido para la frecuencia (en milisegundos).' });
         }
 
-        // Actualizar la frecuencia en la simulación de telemetría
         if (deviceSimulations[deviceId]) {
             deviceSimulations[deviceId].setFrequency(value);
             return res.json({ message: `Comando "setFrequency" enviado al dispositivo ${deviceId} con nueva frecuencia ${value}ms` });
