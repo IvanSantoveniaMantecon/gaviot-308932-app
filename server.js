@@ -68,16 +68,25 @@ app.get("/device/:deviceId", (req, res) => {
 
     registry.getTwin(deviceId, (err, twin) => {
         if (err) {
-            console.error(`Error consultando el dispositivo: ${err.message}`);
-            return res.status(500).json({ error: "No se pudo obtener la información del dispositivo." });
+            console.error("Error consultando el dispositivo:", err.message);
+            return res.status(500).json({ error: "No se pudo obtener la información del dispositivo o gemelo digital." });
         }
 
+        // Revisamos si las propiedades deseadas o reportadas existen
+        const desiredProperties = twin.properties.desired || {};
+        const reportedProperties = twin.properties.reported || {};
+
+        // Devolvemos la información del gemelo digital
         res.json({
             deviceId: twin.deviceId,
             status: twin.connectionState || "Desconocido",
-            properties: twin.properties || {},
-            configurations: twin.configurations || {},
-            tags: twin.tags || {}
+            desiredProperties: desiredProperties,
+            reportedProperties: reportedProperties,
+            capabilities: twin.capabilities || {},
+            modelId: twin.modelId || "N/A",
+            tags: twin.tags || {},
+            version: twin.version,
+            lastActivityTime: twin.lastActivityTime,
         });
     });
 });
@@ -136,19 +145,16 @@ const deviceConnections = {
     device3: "HostName=MIW-WEB-IOT-HUB.azure-devices.net;DeviceId=IoT-device-1;SharedAccessKey=TzGiNBj15U/AbgiLBdeXyC8VPb7ZZT/aCI/lcof3WD4="
 };
 
-// Objeto para almacenar la frecuencia de cada dispositivo
 const deviceFrequencies = {
     device1: 5000, // Frecuencia inicial (en milisegundos)
     device2: 5000,
     device3: 5000
 };
 
-
 const simulateTelemetry = (deviceId, connectionString) => {
     const client = Client.fromConnectionString(connectionString, Mqtt);
     let intervalId;
 
-    // Función para enviar la telemetría
     const sendTelemetry = () => {
         const data = {
             temperature: (20 + Math.random() * 10).toFixed(2),
@@ -167,17 +173,14 @@ const simulateTelemetry = (deviceId, connectionString) => {
         });
     };
 
-    // Función para ajustar la frecuencia
     const setIntervalFrequency = () => {
         clearInterval(intervalId); // Limpiar el intervalo anterior
         const frequency = deviceFrequencies[deviceId] || 5000; // Usar frecuencia predeterminada si no está definida
         intervalId = setInterval(sendTelemetry, frequency); // Establecer nuevo intervalo
     };
 
-    // Inicializar el envío de telemetría
     setIntervalFrequency();
 
-    // Retornar la función para poder cambiar la frecuencia desde afuera
     return {
         setFrequency: (newFrequency) => {
             deviceFrequencies[deviceId] = newFrequency;
@@ -186,23 +189,20 @@ const simulateTelemetry = (deviceId, connectionString) => {
     };
 };
 
-// Iniciar la simulación para todos los dispositivos
 const deviceSimulations = {};
 Object.entries(deviceConnections).forEach(([deviceId, connString]) => {
     deviceSimulations[deviceId] = simulateTelemetry(deviceId, connString);
 });
 
-
 // 📌 Enviar comando a un dispositivo (C2D) mediante URL
 app.post('/send-command/:deviceId', (req, res) => {
     const { deviceId } = req.params;
-    const { command, value } = req.body; // El comando y el valor (si es necesario)
+    const { command, value } = req.body;
 
     if (!command) {
         return res.status(400).json({ error: 'Se debe especificar un comando en el body.' });
     }
 
-    // Verifica si el dispositivo existe en las conexiones
     const deviceConnectionString = deviceConnections[deviceId];
 
     if (!deviceConnectionString) {
@@ -211,13 +211,12 @@ app.post('/send-command/:deviceId', (req, res) => {
 
     const client = Client.fromConnectionString(deviceConnectionString, Mqtt);
 
-    // Comando setFrequency
     if (command === 'setFrequency') {
         if (!value || isNaN(value) || value <= 0) {
             return res.status(400).json({ error: 'Se debe proporcionar un valor válido para la frecuencia (en milisegundos).' });
         }
 
-        // Cambiar la frecuencia de envío
+        // Actualizar la frecuencia en la simulación de telemetría
         if (deviceSimulations[deviceId]) {
             deviceSimulations[deviceId].setFrequency(value);
             return res.json({ message: `Comando "setFrequency" enviado al dispositivo ${deviceId} con nueva frecuencia ${value}ms` });
@@ -226,7 +225,6 @@ app.post('/send-command/:deviceId', (req, res) => {
         }
     }
 
-    // Si el comando no es reconocido
     res.status(400).json({ error: `Comando "${command}" no reconocido.` });
 });
 
