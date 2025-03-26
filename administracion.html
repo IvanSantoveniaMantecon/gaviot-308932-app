@@ -17,6 +17,20 @@
             width: 400px !important;
             height: 300px !important;
         }
+        .alert {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
     </style>
 </head>
 <body>
@@ -86,7 +100,7 @@
         };
         
         const alertThresholds = {
-            temperature: 30,
+            temperature: 28,
             humidity: 80,
             precipitation: 10,
             windSpeed: 20
@@ -126,7 +140,7 @@
             
             Object.entries(telemetryData).forEach(([deviceId, dataList]) => {
                 const avg = calculateAverage(dataList);
-                let tableHTML = `
+                let tableHTML = ` 
                     <h3>${deviceId}</h3>
                     <table>
                         <thead>
@@ -140,7 +154,7 @@
                         </thead>
                         <tbody>`;
                 dataList.forEach(d => {
-                    tableHTML += `
+                    tableHTML += ` 
                         <tr>
                             <td>${d.temperature}</td>
                             <td>${d.humidity}</td>
@@ -149,7 +163,7 @@
                             <td>-</td>
                         </tr>`;
                 });
-                tableHTML += `
+                tableHTML += ` 
                     <tr>
                         <td>${avg.temperature}</td>
                         <td>${avg.humidity}</td>
@@ -213,17 +227,23 @@
             });
         }
 
-        setInterval(() => {
-            const newTelemetry = {
-                temperature: (20 + Math.random() * 10).toFixed(2),
-                humidity: (40 + Math.random() * 20).toFixed(2),
-                precipitation: (Math.random() * 5).toFixed(2),
-                windSpeed: (5 + Math.random() * 10).toFixed(2)
-            };
-            updateTelemetry("device1", newTelemetry);
-            updateTelemetry("device2", newTelemetry);
-            updateTelemetry("device3", newTelemetry);
-        }, 5000);
+        async function fetchTelemetryData() {
+            const deviceIds = ['device1', 'device2', 'device3'];
+            for (let deviceId of deviceIds) {
+                try {
+                    const response = await fetch(`http://localhost:8080/telemetry/${deviceId}`);
+                    const data = await response.json();
+                    if (data.telemetry) {
+                        data.telemetry.forEach(newData => updateTelemetry(deviceId, newData));
+                    }
+                } catch (error) {
+                    console.error(`Error al obtener datos para el dispositivo ${deviceId}:`, error);
+                }
+            }
+        }
+
+        // Actualizar los datos cada 5 segundos
+        setInterval(fetchTelemetryData, 5000);
     </script>
 </body>
 </html>

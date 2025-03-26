@@ -142,6 +142,27 @@ const deviceFrequencies = {
     device3: 5000
 };
 
+// 🔹 Almacenar los datos de telemetría
+const telemetryData = {};
+
+// 📌 Endpoint para obtener los datos de telemetría
+app.get('/telemetry/:deviceId', (req, res) => {
+    const { deviceId } = req.params;
+
+    // Verificar si existe el dispositivo en la simulación
+    if (!telemetryData[deviceId]) {
+        return res.status(404).json({ error: `No se encontraron datos de telemetría para el dispositivo ${deviceId}.` });
+    }
+
+    res.json({
+        deviceId,
+        telemetry: telemetryData[deviceId]
+    });
+});
+
+// 🔹 Almacenar los últimos 3 datos de telemetrí
+
+// Modificar la función de simulación para guardar los últimos 3 datos de telemetría
 const simulateTelemetry = (deviceId, connectionString) => {
     const client = Client.fromConnectionString(connectionString, Mqtt);
     let intervalId;
@@ -160,6 +181,18 @@ const simulateTelemetry = (deviceId, connectionString) => {
                 console.error(`Error enviando telemetría desde ${deviceId}:`, err.message);
             } else {
                 console.log(`Telemetría enviada desde ${deviceId}:`, data);
+
+                // Guardar los últimos 3 registros de telemetría
+                if (!telemetryData[deviceId]) {
+                    telemetryData[deviceId] = [];
+                }
+
+                telemetryData[deviceId].push(data); // Agregar el nuevo registro
+
+                // Mantener solo los últimos 3 registros
+                if (telemetryData[deviceId].length > 3) {
+                    telemetryData[deviceId].shift(); // Eliminar el registro más antiguo si hay más de 3
+                }
             }
         });
     };
