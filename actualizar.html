@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Comandos y Modificar Propiedades</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Dispositivo</h1>
+        
+        <h2>Enviar Comando C2D</h2>
+        <form id="command-form">
+            <label>ID del Dispositivo:</label>
+            <input type="text" id="commandDeviceId" required>
+            <label>Frecuencia (ms):</label>
+            <input type="number" id="commandFrequency" required>
+            <button type="submit" class="button">Enviar Comando</button>
+        </form>
+        <p id="commandResponse"></p>
+
+        <h2>Modificar Propiedad Deseada</h2>
+        <form id="property-form">
+            <label>Nombre del Dispositivo:</label>
+            <input type="text" id="propertyDeviceName" required>
+            <label>Frecuencia (ms):</label>
+            <input type="number" id="propertyFrequency" required>
+            <button type="submit" class="button">Actualizar Propiedad</button>
+        </form>
+        <p id="propertyResponse"></p>
+    </div>
+
+    <script>
+        document.getElementById('command-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const deviceId = document.getElementById('commandDeviceId').value;
+            const frequency = document.getElementById('commandFrequency').value;
+            
+            const response = await fetch(`http://localhost:8080/send-command/${deviceId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'setFrequency', value: parseInt(frequency) })
+            });
+            
+            const result = await response.text();
+            document.getElementById('commandResponse').innerText = result;
+        });
+
+        document.getElementById('property-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const deviceName = document.getElementById('propertyDeviceName').value;
+            const frequency = document.getElementById('propertyFrequency').value;
+            
+            const response = await fetch(`http://localhost:8080/devices/${deviceName}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'setFrequency', value: parseInt(frequency) })
+            });
+            
+            const result = await response.text();
+            document.getElementById('propertyResponse').innerText = result;
+        });
+    </script>
+</body>
+</html>
