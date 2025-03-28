@@ -115,6 +115,43 @@ app.put('/devices/:id', (req, res) => {
     });
 });
 
+const loadDeviceFrequencies = async () => {
+    try {
+        console.log("📡 Cargando frecuencias de dispositivos desde Azure IoT Hub...");
+        registry.list((err, deviceList) => {
+            if (err) {
+                console.error("❌ Error obteniendo la lista de dispositivos:", err.message);
+                return;
+            }
+
+            deviceList.forEach(device => {
+                registry.getTwin(device.deviceId, (err, twin) => {
+                    if (err) {
+                        console.error(`❌ Error obteniendo twin de ${device.deviceId}:`, err.message);
+                        return;
+                    }
+
+                    // 🔹 Obtener la frecuencia deseada o asignar 5000 por defecto
+                    const frequency = twin.properties?.desired?.frequency ?? 5000;
+                    const source = twin.properties?.desired?.frequency ? "📡 del dispositivo" : "⚙️ por defecto (5000ms)";
+                    deviceFrequencies[device.deviceId] = frequency;
+
+                    // 🔹 Si el dispositivo ya tiene una simulación, actualizar su frecuencia
+                    if (deviceSimulations[device.deviceId]) {
+                        deviceSimulations[device.deviceId].setFrequency(frequency);
+                    }
+
+                    console.log(`✅ Dispositivo ${device.deviceId} - Frecuencia: ${frequency}ms (${source})`);
+                });
+            });
+        });
+    } catch (error) {
+        console.error("❌ Error al cargar frecuencias de dispositivos:", error.message);
+    }
+};
+
+
+
 // 📌 Eliminar un dispositivo de Azure IoT Hub
 app.delete('/devices/:id', (req, res) => {
     const deviceId = req.params.id;
@@ -137,9 +174,7 @@ const deviceConnections = {
 };
 
 const deviceFrequencies = {
-    device1: 5000, // Frecuencia inicial (en milisegundos)
-    device2: 5000,
-    device3: 5000
+
 };
 
 // 🔹 Almacenar los datos de telemetría
@@ -252,6 +287,9 @@ app.post('/send-command/:deviceId', (req, res) => {
 });
 
 // 🚀 Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+loadDeviceFrequencies().then(() => {
+    app.listen(PORT, () => {
+        console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    });
 });
+
